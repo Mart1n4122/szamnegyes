@@ -17,13 +17,17 @@ app.post("/fours", (req, res) => {
 
   const [a, b, c, d] = data;
 
+  if ([a, b, c, d].some((n) => typeof n !== "number" || n < 0)) {
+    return res.status(400).json({ error: "Invalid data" });
+  }
+
   try {
     const result = db
       .prepare(
         `
-            INSERT INTO fours (a, b, c, d)
-            VALUES (?, ?, ?, ?)
-        `,
+      INSERT INTO fours (a, b, c, d)
+      VALUES (?, ?, ?, ?)
+    `,
       )
       .run(a, b, c, d);
 
@@ -31,7 +35,7 @@ app.post("/fours", (req, res) => {
       id: result.lastInsertRowid,
       values: [a, b, c, d],
     });
-  } catch (err) {
+  } catch {
     res.status(400).json({ error: "Invalid data" });
   }
 });

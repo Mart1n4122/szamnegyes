@@ -1,81 +1,131 @@
-function solve() {
-  const table = [
-    [+c00.value, +c01.value, +c02.value],
-    [+c10.value, +c11.value, +c12.value],
-    [+c20.value, +c21.value, +c22.value],
-  ];
+document.addEventListener("DOMContentLoaded", () => {
+  let A = 0,
+    B = 0,
+    C = 0,
+    D = 0;
 
-  const a = table[0][0];
-  const b = table[0][2];
-  const c = table[2][0];
-  const d = table[2][2];
+  const c00 = document.getElementById("c00");
+  const c01 = document.getElementById("c01");
+  const c02 = document.getElementById("c02");
+  const c10 = document.getElementById("c10");
+  const c11 = document.getElementById("c11");
+  const c12 = document.getElementById("c12");
+  const c20 = document.getElementById("c20");
+  const c21 = document.getElementById("c21");
+  const c22 = document.getElementById("c22");
+  const result = document.getElementById("result");
 
-  const valid =
-    table[0][1] === a + b &&
-    table[1][0] === a + c &&
-    table[1][2] === b + d &&
-    table[2][1] === c + d &&
-    table[1][1] === a + b + c + d;
+  function renderTable() {
+    c00.value = A;
+    c01.value = A + B;
+    c02.value = B;
 
-  const resultDiv = document.getElementById("result");
+    c10.value = A + C;
+    c11.value = A + B + C + D;
+    c12.value = B + D;
 
-  if (!valid) {
-    resultDiv.textContent = "[-1] (Csalás történt)";
-    resultDiv.className = "alert alert-danger mt-3 text-center";
-  } else {
-    resultDiv.textContent = `[${a}, ${b}, ${c}, ${d}]`;
-    resultDiv.className = "alert alert-success mt-3 text-center";
+    c20.value = C;
+    c21.value = C + D;
+    c22.value = D;
   }
-}
 
-const API = "http://localhost:3000/fours";
+  window.incA = () => {
+    A++;
+    renderTable();
+  };
+  window.incB = () => {
+    B++;
+    renderTable();
+  };
+  window.incC = () => {
+    C++;
+    renderTable();
+  };
+  window.incD = () => {
+    D++;
+    renderTable();
+  };
 
-function addFour() {
-  const data = [
-    Number(a.value),
-    Number(b.value),
-    Number(c.value),
-    Number(d.value),
-  ];
+  window.solve = () => {
+    result.textContent = `[${A}, ${B}, ${C}, ${D}]`;
+    result.className = "alert alert-success mt-3 text-center";
+  };
 
-  fetch(API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-    .then((r) => {
-      if (!r.ok) throw new Error();
-      return r.json();
-    })
-    .then((res) => {
-      addResult.innerHTML = `<div class="alert alert-success">Mentve! ID: ${res.id}</div>`;
-    })
-    .catch(() => {
+  renderTable();
+
+  const API = "http://localhost:3000/fours";
+
+  const aInput = document.getElementById("a");
+  const bInput = document.getElementById("b");
+  const cInput = document.getElementById("c");
+  const dInput = document.getElementById("d");
+
+  const addResult = document.getElementById("addResult");
+  const foursResult = document.getElementById("foursResult");
+  const searchId = document.getElementById("searchId");
+
+  window.addFour = () => {
+    const values = [aInput.value, bInput.value, cInput.value, dInput.value];
+
+    if (values.some((v) => v === "")) {
       addResult.innerHTML = `<div class="alert alert-danger">Invalid data</div>`;
-    });
-}
+      return;
+    }
 
-function loadAll() {
-  fetch(API)
-    .then((r) => r.json())
-    .then((data) => {
-      foursResult.textContent = JSON.stringify(data, null, 2);
-    });
-}
+    const numbers = values.map(Number);
 
-function loadById() {
-  const id = searchId.value;
-  if (!id) return;
+    if (numbers.some((n) => n < 0)) {
+      addResult.innerHTML = `<div class="alert alert-danger">Invalid data</div>`;
+      return;
+    }
 
-  fetch(`${API}/${id}`)
-    .then((r) => {
-      if (!r.ok) throw new Error();
-      return r.json();
+    fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(numbers),
     })
-    .then((data) => {
-      foursResult.textContent = JSON.stringify(data, null, 2);
-    })
-    .catch(() => {
-      foursResult.textContent = "Nincs ilyen ID";
-    });
-}
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((res) => {
+        addResult.innerHTML = `<div class="alert alert-success">Mentve! ID: ${res.id}</div>`;
+      })
+      .catch(() => {
+        addResult.innerHTML = `<div class="alert alert-danger">Invalid data</div>`;
+      });
+  };
+
+  window.loadAll = () => {
+    fetch(API)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.length === 0) {
+          foursResult.textContent = "Nem található adat!";
+        } else {
+          foursResult.textContent = JSON.stringify(data, null, 2);
+        }
+      });
+  };
+
+  window.loadById = () => {
+    const id = searchId.value;
+    if (!id) return;
+
+    fetch(`${API}/${id}`)
+      .then((r) => {
+        if (r.status === 404) throw new Error("notfound");
+        return r.json();
+      })
+      .then((data) => {
+        foursResult.textContent = JSON.stringify(data, null, 2);
+      })
+      .catch((err) => {
+        if (err.message === "notfound") {
+          foursResult.textContent = "ID nem található!";
+        } else {
+          foursResult.textContent = "Hiba történt!";
+        }
+      });
+  };
+});
